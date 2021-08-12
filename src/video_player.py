@@ -15,8 +15,15 @@ class VideoPlayer:
 
     def show_all_videos(self):
         """Returns all videos."""
-
-        print("show_all_videos needs implementation")
+        print("Here's a list of all available videos:")
+        index = lambda x: x._title
+        for video in sorted(self._video_library.get_all_videos(), key=index):
+            tags = ""
+            for tag in video._tags:
+                tags+=f"{tag} "
+            if tags!="":
+                tags=tags[:-1]
+            print(f"\t{video._title} ({video._video_id}) [{tags}]")
 
     def play_video(self, video_id):
         """Plays the respective video.
