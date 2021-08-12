@@ -4,12 +4,23 @@ from .video_library import VideoLibrary
 import random
 
 
+class VideoException(Exception):
+    def __init__(self, command, message):
+        self.command = command
+        self.message = f"Cannot {self.command} video: {message}"
+        super().__init__(f"Cannot {self.command} video: {message}")
+
+
 class VideoPlayer:
     """A class used to represent a Video Player."""
 
     def __init__(self):
         self._video_library = VideoLibrary()
-        self._playing_id = ""
+        self.playing_id = ""
+        self.paused = False
+
+    def get_title(self):
+        return self._video_library.get_video(self.playing_id)._title
 
     def number_of_videos(self):
         num = self._video_library.get_number_of_videos()
@@ -36,22 +47,29 @@ class VideoPlayer:
             video_id: The video_id to be played.
         """
         video = self._video_library.get_video(video_id)
-        if video is None:
-            print("Cannot play video: Video does not exist")
-        else:
-            if self._playing_id != "":
-                self.stop_video()
-            self._playing_id = video_id
-            print(f"Playing video: {video._title}")
+        try:
+            if video is None:
+                raise VideoException("play", "Video does not exist")
+            else:
+                if self.playing_id != "":
+                    self.stop_video()
+                self.playing_id = video_id
+                self.paused = False
+                print(f"Playing video: {self.get_title()}")
+        except VideoException as e:
+            print(e.message)
 
     def stop_video(self):
         """Stops the current video."""
-        if self._playing_id != "":
-            title = self._video_library.get_video(self._playing_id)._title
-            self._playing_id = ""
-            print(f"Stopping video: {title}")
-        else:
-            print("Cannot stop video: No video is currently playing")
+        try:
+            if self.playing_id != "":
+                title = self.get_title()
+                self.playing_id = ""
+                print(f"Stopping video: {title}")
+            else:
+                raise VideoException("stop", "No video is currently playing")
+        except VideoException as e:
+            print(e.message)
 
     def play_random_video(self):
         """Plays a random video from the video library."""
@@ -60,18 +78,46 @@ class VideoPlayer:
 
     def pause_video(self):
         """Pauses the current video."""
-
-        print("pause_video needs implementation")
+        try:
+            if self.playing_id == "":
+                raise VideoException("pause", "No video is currently playing")
+            if self.paused:
+                print(f"Video already paused: {self.get_title()}")
+            else:
+                self.paused = True
+                print(f"Pausing video: {self.get_title()}")
+        except VideoException as e:
+            print(e.message)
 
     def continue_video(self):
         """Resumes playing the current video."""
-
-        print("continue_video needs implementation")
+        try:
+            if self.playing_id == "":
+                raise VideoException("continue",
+                                     "No video is currently playing")
+            if self.paused is False:
+                raise VideoException("continue", "Video is not paused")
+            self.paused = False
+            print(f"Continuing video: {self.get_title()}")
+        except VideoException as e:
+            print(e.message)
 
     def show_playing(self):
         """Displays video currently playing."""
-
-        print("show_playing needs implementation")
+        if self.playing_id == "":
+            print("No video is currently playing")
+            return
+        video = self._video_library.get_video(self.playing_id)
+        tags = ""
+        for tag in video._tags:
+            tags += f"{tag} "
+        if tags != "":
+            tags = tags[:-1]
+        message = f"Currently playing: \
+            {video._title} ({video._video_id}) [{tags}]"
+        if self.paused:
+            message += " - PAUSED"
+        print(message)
 
     def create_playlist(self, playlist_name):
         """Creates a playlist with a given name.
