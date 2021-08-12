@@ -43,3 +43,6 @@ class VideoLibrary:
             does not exist.
         """
         return self._videos.get(video_id, None)
+
+    def get_number_of_videos(self):
+        return len(self.get_all_videos())
