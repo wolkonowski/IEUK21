@@ -33,6 +33,9 @@ class VideoLibrary:
         """Returns all available video information from the video library."""
         return list(self._videos.values())
 
+    def get_legal_videos(self):
+        return [v for v in self.get_all_videos() if v._video_id not in self.flagged]
+
     def get_video(self, video_id):
         """Returns the video object (title, url, tags) from the video library.
 
@@ -47,3 +50,6 @@ class VideoLibrary:
 
     def get_number_of_videos(self):
         return len(self.get_all_videos())
+
+    def get_number_of_legal_videos(self):
+        return self.get_number_of_videos()-len(self.flagged)

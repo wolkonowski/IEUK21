@@ -50,7 +50,11 @@ class VideoPlayer:
                 tags += f"{tag} "
             if tags != "":
                 tags = tags[:-1]
-            print(f"\t{video._title} ({video._video_id}) [{tags}]")
+            msg = ""
+            if video._video_id in self._video_library.flagged:
+                reason = self._video_library.flagged[video._video_id]
+                msg = f" - FLAGGED (reason: {reason})"
+            print(f"\t{video._title} ({video._video_id}) [{tags}]{msg}")
 
     def play_video(self, video_id):
         """Plays the respective video.
@@ -62,6 +66,10 @@ class VideoPlayer:
         try:
             if video is None:
                 raise VideoException("play", "Video does not exist")
+            if video_id in self._video_library.flagged.keys():
+                reason = self._video_library.flagged[video_id]
+                raise VideoException("play", f"Video is currently "
+                                     f"flagged (reason: {reason})")
             else:
                 if self.playing_id != "":
                     self.stop_video()
@@ -85,8 +93,12 @@ class VideoPlayer:
 
     def play_random_video(self):
         """Plays a random video from the video library."""
-        num = random.randrange(self._video_library.get_number_of_videos())
-        self.play_video(self._video_library.get_all_videos()[num]._video_id)
+        num = self._video_library.get_number_of_legal_videos()
+        if num == 0:
+            print("No videos available")
+            return
+        rand = random.randrange(num)
+        self.play_video(self._video_library.get_legal_videos()[rand]._video_id)
 
     def pause_video(self):
         """Pauses the current video."""
@@ -138,7 +150,11 @@ class VideoPlayer:
             tags += f"{tag} "
         if tags != "":
             tags = tags[:-1]
-        return f"{video._title} ({video._video_id}) [{tags}]"
+        msg = ""
+        if video_id in self._video_library.flagged:
+            reason = self._video_library.flagged[video_id]
+            msg = f" - FLAGGED (reason: {reason})"
+        return f"{video._title} ({video_id}) [{tags}]{msg}"
 
     def create_playlist(self, playlist_name):
         """Creates a playlist with a given name.
@@ -170,6 +186,12 @@ class VideoPlayer:
             if self._video_library.get_video(video_id) is None:
                 raise PlaylistException(
                     "add video to", "Video does not exist",
+                    name=playlist_name)
+            if video_id in self._video_library.flagged:
+                reason = self._video_library.flagged[video_id]
+                raise PlaylistException(
+                    "add video to",
+                    f"Video is currently flagged (reason: {reason})",
                     name=playlist_name)
             if video_id in self.playlists.get(playlist_name.upper()).videos:
                 raise PlaylistException(
@@ -233,7 +255,8 @@ class VideoPlayer:
                     "remove video from", "Video is not in playlist",
                     name=playlist_name)
             p.videos.remove(video_id)
-            print(f"Removed video from {playlist_name}: {self.get_title(video_id)}")
+            print(f"Removed video from {playlist_name}: "
+                  f"{self.get_title(video_id)}")
         except PlaylistException as e:
             print(e.message)
 
@@ -277,7 +300,7 @@ class VideoPlayer:
         Args:
             search_term: The query to be used in search.
         """
-        results = [v for v in self._video_library.get_all_videos()
+        results = [v for v in self._video_library.get_legal_videos()
                    if search_term.upper() in v._title.upper()]
         if not results:
             print(f"No search results for {search_term}")
@@ -292,7 +315,7 @@ class VideoPlayer:
         print("Would you like to play any of the above? If yes, "
               "specify the number of the video.")
         print("If your answer is not a valid number, "
-                    "we will assume it's a no.")
+              "we will assume it's a no.")
         num = input()
         try:
             num = int(num)
@@ -308,7 +331,7 @@ class VideoPlayer:
         Args:
             video_tag: The video tag to be used in search.
         """
-        results = [v for v in self._video_library.get_all_videos()
+        results = [v for v in self._video_library.get_legal_videos()
                    if video_tag.upper() in [t.upper() for t in v._tags]]
         if not results:
             print(f"No search results for {video_tag}")
@@ -323,7 +346,7 @@ class VideoPlayer:
         print("Would you like to play any of the above? If yes, "
               "specify the number of the video.")
         print("If your answer is not a valid number, "
-                    "we will assume it's a no.")
+              "we will assume it's a no.")
         num = input()
         try:
             num = int(num)
@@ -347,9 +370,11 @@ class VideoPlayer:
             if video_id in self._video_library.flagged.keys():
                 raise VideoException(
                     "flag", "Video is already flagged")
-            self._video_library.flagged[video_id] = flag_reason
             if flag_reason == "":
                 flag_reason = "Not supplied"
+            self._video_library.flagged[video_id] = flag_reason
+            if video_id == self.playing_id:
+                self.stop_video()
             print(f"Successfully flagged video: {self.get_title(video_id)} "
                   f"(reason: {flag_reason})")
         except VideoException as e:
@@ -369,6 +394,7 @@ class VideoPlayer:
                 raise VideoException(
                     "remove flag from", "Video is not flagged")
             self._video_library.flagged.pop(video_id)
-            print(f"Successfully removed flag from video: {self.get_title(video_id)}")
+            print(f"Successfully removed flag from video: "
+                  f"{self.get_title(video_id)}")
         except VideoException as e:
             print(e.message)
