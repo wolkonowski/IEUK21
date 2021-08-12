@@ -277,7 +277,30 @@ class VideoPlayer:
         Args:
             search_term: The query to be used in search.
         """
-        print("search_videos needs implementation")
+        results = [v for v in self._video_library.get_all_videos()
+                   if search_term.upper() in v._title.upper()]
+        if not results:
+            print(f"No search results for {search_term}")
+            return
+
+        def index(x):
+            return x._title
+        results = sorted(results, key=index)
+        print(f"Here are the results for {search_term}:")
+        for count, video in enumerate(results):
+            print(f"\t{count+1}) {self.show_video(video._video_id)}")
+        print("Would you like to play any of the above? If yes, "
+              "specify the number of the video.")
+        print("If your answer is not a valid number, "
+                    "we will assume it's a no.")
+        num = input()
+        try:
+            num = int(num)
+        except ValueError:
+            return
+        num = num-1
+        if num >= 0 and num < len(results):
+            self.play_video(results[num]._video_id)
 
     def search_videos_tag(self, video_tag):
         """Display all videos whose tags contains the provided tag.
@@ -285,7 +308,30 @@ class VideoPlayer:
         Args:
             video_tag: The video tag to be used in search.
         """
-        print("search_videos_tag needs implementation")
+        results = [v for v in self._video_library.get_all_videos()
+                   if video_tag.upper() in [t.upper() for t in v._tags]]
+        if not results:
+            print(f"No search results for {video_tag}")
+            return
+
+        def index(x):
+            return x._title
+        results = sorted(results, key=index)
+        print(f"Here are the results for {video_tag}:")
+        for count, video in enumerate(results):
+            print(f"\t{count+1}) {self.show_video(video._video_id)}")
+        print("Would you like to play any of the above? If yes, "
+              "specify the number of the video.")
+        print("If your answer is not a valid number, "
+                    "we will assume it's a no.")
+        num = input()
+        try:
+            num = int(num)
+        except ValueError:
+            return
+        num = num-1
+        if num >= 0 and num < len(results):
+            self.play_video(results[num]._video_id)
 
     def flag_video(self, video_id, flag_reason=""):
         """Mark a video as flagged.
