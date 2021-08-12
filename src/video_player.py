@@ -197,7 +197,7 @@ class VideoPlayer:
                 raise PlaylistException(
                     "add video to", "Video already added",
                     name=playlist_name)
-            self.playlists.get(playlist_name.upper()).videos.add(video_id)
+            self.playlists.get(playlist_name.upper()).videos.append(video_id)
             title = self.get_title(video_id)
             print(f"Added video to {playlist_name}: {title}")
         except PlaylistException as e:
